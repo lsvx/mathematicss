@@ -36,11 +36,15 @@
 			for(var j = 0; j<current.length; j++){
 				parens[i][j] = 0;
 				if(current.charAt(j) == '('){
-					depth++;
-					parens[i][j] = depth; //relates character location to depth change. comes after depth++
+					if((depth == 0 && current.substr(j-4,4))==='math'||depth >0){//allow for depth to increase only if we are inside of a 'math' section of if the depth is already >0 (ie we are inside a math section)
+						depth++;
+						parens[i][j] = depth; //relates character location to depth change. comes after depth++
+					}
 				}else if(current.charAt(j) == ')'){
-					parens[i][j]= depth; //relates character location to depth change. comes before depth--
-					depth--;
+					if(depth>0){
+						parens[i][j]= depth; //relates character location to depth change. comes before depth--
+						depth--;
+					}
 					if(depth<0){
 						contaminated[i] = current; //add rule to contaminated array if improper nesting is found
 					}
@@ -59,11 +63,13 @@
 		for(var i = 0; i<current.length; i++){
 			parens[i] = 0;
 			if(current.charAt(i) == '('){
-				depth++;
-				parens[i] = depth; //relates character location to depth change. comes after depth++
-			}else if(current.charAt(i) == ')'){
+				if((depth == 0 && current.substr(i-4,4)==='math')||depth >0){ //allow for depth to increase only if we are inside of a 'math' section of if the depth is already >0 (ie we are inside a math section)
+					depth++;
+					parens[i] = depth; //relates character location to depth change. comes after depth++
+				}
+			}else if(current.charAt(i) == ')' && depth >0){
 				parens[i]= depth; //relates character location to depth change. comes before depth--
-				depth--;
+				depth--;		
 			}
 		}
 		return parens;
@@ -97,6 +103,26 @@
 			if(before.substr(j-4) === ')'|| !isNaN(before.substr(j-4))){
 				before = before + '*';
 			}
+			else if(before.substr(j-4) === '-'){
+				before = before + '1*';
+			}
+		}
+		else if(before.substr(j-3) === 'pow'){
+			chunk = current.substr(j+1, k-j-1);
+			chunk1 = chunk.match(/^[0-9]+/);
+			chunk2 = chunk.match(/[0-9]+$/);
+			chunk = Math.pow(chunk1,chunk2);
+			before = before.substr(0,j-3);
+			if(before.substr(j-4) === ')'|| !isNaN(before.substr(j-4))){
+				before = before + '*';
+			}
+		}
+		else if(before.substr(j-3) === 'exp'){
+			chunk = Math.exp(chunk);
+			before = before.substr(0,j-3);
+			if(before.substr(j-4) === ')'|| !isNaN(before.substr(j-4))){
+				before = before + '*';
+			}
 		}
 		else if(before.substr(j-2) === 'pi'){
 			chunk = Math.PI;
@@ -114,11 +140,18 @@
 		}
 		else if(before.substr(j-4) === 'math'){
 			before = before.substr(0,j-4);
+			if(before[before.length-1] === '-' && chunk<0){
+				before = before.substr(0,before.length-1);
+				chunk = chunk.toString().substr(1);
+			}
 		}
 		else if(!isNaN(before.substr(j-1))){
 			before = before + '*';
 		}
-		if(!isNaN(after.substr(0,1))){
+		else if(before.substr(j-1) === '-'){
+			before = before + '1*';
+		}
+		if(!isNaN(after.substr(0,1)) && after.substr(0,1) !== ' '){ //if character after the parentheses is a number and not a space
 			after = '*'+after;
 		}
 		return before + chunk + after;
