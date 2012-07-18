@@ -1,0 +1,7 @@
+body{
+	background: -webkit-linear-gradient(top, #fff math(log(1)), #BBB 100%);
+	box-shadow: inset 0 0 math(10*pi()/2)px rgba(105,212,255,1);
+	height:100%;
+	margin:math(pow(4,2)/8-2);
+	width:100%;
+}

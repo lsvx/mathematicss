@@ -1,6 +1,7 @@
 (function(window, undefined){
 	loadSheets(); //start the chain
 	var rules = ''; //initialize the rules variable in this scope so it can be used later
+	var vars = []; //initialize the array holding the variables for use later
 	function loadSheets(){
 		var links = [];
 		var sheets = document.getElementsByTagName('link'); //search for link tags
@@ -19,12 +20,35 @@
 	function matchcss(response, exit){ //collect all of the rules from the xhr response texts and match them to a pattern
 		rules = rules+response.responseText;
 		if(exit){ //send rules to pattern matching function if exit condition is received
+			var varspattern = /@[A-Za-z]+\w*:.*;/g;
+			vars = rules.match(varspattern);
+			rules = rules.replace(varspattern, '');
+			parsevars(vars);
 			var pattern =/:[\-\#]*.*(?:math\().*\).*/g;
 			var found = rules.match(pattern);
 			parens(found);
 		}
 	}
 
+	function parsevars(vars){
+		var current = '';
+		if(vars){
+			for(var i = 0; i<vars.length; i++){
+				var variable = {}; //initialize this object variable in the for loop so that every element in the array is its own object. Otherwise all elements reference the last object.
+				current = vars[i].replace(/\s/g,'').replace(';','');
+				variable.name = current.substr(0,current.indexOf(':'));
+				variable.value = current.substr(current.indexOf(':')+1);
+				vars[i] = variable;
+			}
+			vars.sort(function(a,b){if(a.name.length>b.name.length)return -1;if(a.name.length<b.name.length)return 1;return 0});
+			for(var i = 0; i<vars.length; i++){
+				var pattern = vars[i].name;
+				var re = new RegExp(pattern, "g");
+				rules = rules.replace(re, vars[i].value);
+			}
+		}
+
+	}
 	function parens(found){ //locate and check for properly nested parentheses in css rules
 		var current = ''; //initialize working variable
 		var contaminated = new Array(found.length); //array of css rules with errors 
@@ -107,6 +131,66 @@
 				before = before + '1*';
 			}
 		}
+		else if(before.substr(j-3) === 'sin'){
+			chunk = Math.sin(chunk);
+			before = before.substr(0,j-3);
+			if(before.substr(j-4) === ')'|| !isNaN(before.substr(j-4))){
+				before = before + '*';
+			}
+			else if(before.substr(j-4) === '-'){
+				before = before + '1*';
+			}
+		}
+		else if(before.substr(j-4) === 'asin' && before.substr(j-3) !== 'sin'){
+			chunk = Math.sin(chunk);
+			before = before.substr(0,j-4);
+			if(before.substr(j-5) === ')'|| !isNaN(before.substr(j-5))){
+				before = before + '*';
+			}
+			else if(before.substr(j-5) === '-'){
+				before = before + '1*';
+			}
+		}
+		else if(before.substr(j-3) === 'cos'){
+			chunk = Math.cos(chunk);
+			before = before.substr(0,j-3);
+			if(before.substr(j-4) === ')'|| !isNaN(before.substr(j-4))){
+				before = before + '*';
+			}
+			else if(before.substr(j-4) === '-'){
+				before = before + '1*';
+			}
+		}
+		else if(before.substr(j-4) === 'acos' && before.substr(j-3) !== 'cos'){
+			chunk = Math.cos(chunk);
+			before = before.substr(0,j-4);
+			if(before.substr(j-5) === ')'|| !isNaN(before.substr(j-5))){
+				before = before + '*';
+			}
+			else if(before.substr(j-5) === '-'){
+				before = before + '1*';
+			}
+		}
+		else if(before.substr(j-3) === 'tan'){
+			chunk = Math.tan(chunk);
+			before = before.substr(0,j-3);
+			if(before.substr(j-4) === ')'|| !isNaN(before.substr(j-4))){
+				before = before + '*';
+			}
+			else if(before.substr(j-4) === '-'){
+				before = before + '1*';
+			}
+		}
+		else if(before.substr(j-4) === 'atan' && before.substr(j-3) !== 'tan'){
+			chunk = Math.tan(chunk);
+			before = before.substr(0,j-4);
+			if(before.substr(j-5) === ')'|| !isNaN(before.substr(j-5))){
+				before = before + '*';
+			}
+			else if(before.substr(j-5) === '-'){
+				before = before + '1*';
+			}
+		}
 		else if(before.substr(j-3) === 'pow'){
 			chunk = current.substr(j+1, k-j-1);
 			chunk1 = chunk.match(/^[0-9]+/);
@@ -119,6 +203,13 @@
 		}
 		else if(before.substr(j-3) === 'exp'){
 			chunk = Math.exp(chunk);
+			before = before.substr(0,j-3);
+			if(before.substr(j-4) === ')'|| !isNaN(before.substr(j-4))){
+				before = before + '*';
+			}
+		}
+		else if(before.substr(j-3) === 'abs'){
+			chunk = Math.abs(chunk);
 			before = before.substr(0,j-3);
 			if(before.substr(j-4) === ')'|| !isNaN(before.substr(j-4))){
 				before = before + '*';
