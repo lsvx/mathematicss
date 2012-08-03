@@ -1,5 +1,5 @@
 MathematiCSS!
--------------
+=============
 
 MathematiCSS is a CSS preprocessor written in JavaScript that allows you to use delicious math expressions, functions, and variables in your style sheets. Why? Well just 'cause.
 
